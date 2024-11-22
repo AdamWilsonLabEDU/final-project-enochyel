@@ -1,26 +1,29 @@
 ---
-title: "My Final Project Template"
-author: Your name here
+title: "Intersectional climate justice perspective: The case of extreme heat in Erie County, NY."
+author: Enoch Yeleliere
 subtitle: Subtitle here if desired
 date: today
 date-format: long
 ---
 
 # Introduction
+The rise in global temperatures above pre-industrial levels, coupled with rapid urbanization—projected to exceed 70% by 2050 (UN DESA, 2018)—has led to increased greenhouse gas emissions, exacerbating the Urban Heat Effect (UHE) (Jung et al., 2024). This phenomenon has made summers increasingly difficult, especially in parts of the United States (US), with profound socio-ecological impacts and disruptions. The escalation of extreme heat has created significant environmental and social challenges, raising critical concerns related to environmental and climate justice (Mitchell and Chakraborty, 2014). Heatwaves not only contribute to health complications—such as respiratory and cardiovascular issues—but also degrade urban environmental quality, diminishing residents' overall quality of life (Li et al., 2019). These changes are further evidenced by increased electricity consumption during the summer months, as residents rely on air conditioning to mitigate heat risks. However, this reliance creates additional challenges, including disparities in access to cooling systems for vulnerable groups and a 19% rise in energy consumption, leading to higher electricity costs for residents (Li et al., 2019).
 
-\[\~ 200 words\]
+Urban areas with limited urban green infrastructure (UGI) are particularly susceptible to heat risks, as the absence of green spaces correlates with poor air quality and reduced cooling effects (Chen, 2024; Wilby, 2008). While much research has focused on the Urban Heat Island (UHI) effect, often through a climate or environmental justice lens, fewer studies explore the intersectional dimensions of climate justice. Such an intersectional approach integrates factors like surface temperature, socio-demographic characteristics, and the presence of UGI to better understand how vulnerability to heat risk varies across different communities.
 
-Clearly stated background and questions / hypotheses / problems being addressed. Sets up the analysis in an interesting and compelling way. Include figures if you like.
+This perspective is particularly relevant given the history of systemic discrimination in US cities, where practices like redlining have reduced green infrastructure in minority neighborhoods and intensified racial segregation. In this context, the study addresses the following research questions:
+
+i)  What are the spatial patterns of heat risk in Erie County, New York?
+
+ii) How do socio-demographic, economic, and spatial factors intersect to shape the vulnerability of different groups?
 
 # Materials and methods
 
-\[\~ 200 words\]
+The study used multiple data sources to examine the socioeconomic features of census tracts including the cloud-free 30-m-resolution Landsat 8 satellite from the United States Geological Survey (USGS), surface temperature (APPEARS), and 5-year estimate American Community Survey (ACS) provided by the US Census Bureau (<https://www.census.gov/>) or Tidy census.
 
-Narrative: Clear narrative description of the data sources and methods. Includes data from at least two sources that were integrated / merged in R.
+The study employs spatial regression analysis to investigate the relationship between heat risk—measured by land surface temperature—and the presence of racial minorities, low-income residents, and elderly populations. Additionally, the study identifies variations in spatial pattern variables among these vulnerable groups, categorizing them as low, medium, or high risk. Census tracts with a z-score greater than 1 are classified as “high risk,” those with a z-score lower than -1 are classified as “low risk,” while the remaining tracts are designated as “medium risk.” Subsequently, the study utilizes analysis of variance (ANOVA) to assess the significance of spatial pattern variations among these groups and examines how these disparities contribute to heat inequity.
 
-Code: The code associated with the project is well organized and easy to follow. Demonstrates mastery of R graphics and functions.
 
-Data: The underlying data are publicly accessible via the web and downloaded/accessed within the Rmd script. If you want to use your own data, you must make it available on a website (e.g. Figshare) so that others are able to re-run your code.
 
 You can do bullets like this:
 
@@ -42,32 +45,152 @@ Here's my first code chunk.
 x=3+4
 ```
 
-Refer to output in your narrative like this: x=`r x` .
-
-Load any required packages in a code chunk (you may need to install some packages):
-
 ```{r, message=F, warning=F}
 library(tidyverse)
+library(tidycensus)
 library(leaflet)
-library(kableExtra)
-library(htmlwidgets)
-library(widgetframe)
-knitr::opts_chunk$set(widgetframe_widgets_dir = 'widgets' ) 
+library(dplyr)         # For data manipulation
+library(terra)
+library(rasterVis)
+library(ggmap)
+library(sf)            # For handling spatial data
+library(mapview)
+library(ggplot2)       # For plotting
 knitr::opts_chunk$set(cache=TRUE)  # cache the results for quick compiling
 ```
 
+##Prepare surface temperature data (from Landsat 8) 
 ## Download and clean all required data
 
 ```{r}
-n=20
-data=data.frame(x=runif(n,-180,180),
-                y=runif(n,-60,60),
-                size = runif(n, 5, 20),
-                category = factor(
-                  sample(letters[1:5], n, replace = TRUE)
-                  ),
-                value = rnorm(n))
+# Create a boundary raster with specified extents 
+boundary <- rast(extent = c(xmin = -88.38, xmax = -88.10, ymin = 40.03, ymax = 40.17))
+print(boundary)
+# List only .TIF files 
+tif_files <- list.files("data", pattern = "\\.TIF$", full.names = TRUE) #include only TIF files from the landsat data #lapply apply a function over a list
+#Load the rasters 
+rasters <- lapply(tif_files, rast) #However, the extents across the 17 TIF files are different
+#Check extents, resolutions, and CRS of each raster
+extents <- lapply(rasters, ext)
+
+resolutions <- lapply(rasters, res)
+
+crs_list <- lapply(rasters, crs)
+
+#Find common extent to able the stack function
+common_extent <- Reduce(intersect, extents) #common extent is 581985, 811215, 4667385, 4899915  (xmin, xmax, ymin, ymax) from B1.TIF
+print(common_extent) 
+#Find common resolution
+common_res <- res(rasters[[1]])
+# Ensure the same CRS for all rasters 
+reference_crs <- crs(rasters[[1]])
+rasters <- lapply(rasters, function(r) {
+    if (!identical(crs(r), reference_crs)) {
+        project(r, reference_crs)
+    } else {
+        r
+    }
+})
+#Create a reference raster with common extent and resolution
+ref_raster <- rast(extent = common_extent, res = common_res, crs = reference_crs)
+# Crop and resample each raster to the common extent and resolution 
+rasters_aligned <- lapply(rasters, function(r) {
+    r_cropped <- crop(r, common_extent)
+    r_resampled <- resample(r_cropped, ref_raster)
+    return(r_resampled)
+})
+# Stack the aligned rasters 
+raster_stack <- rast(rasters_aligned)
+# Inspect the raster stack
+print(raster_stack)
 ```
+```{r}
+# Plot RGB with stretching to handle the color intensity issue
+plotRGB(raster_stack, stretch="lin") # Linear stretch
+plotRGB(raster_stack, stretch="hist") # Histogram equalization stretch
+normalize_raster <- function(r) {
+  r_min <- minValue(r)
+  r_max <- maxValue(r)
+  (r - r_min) / (r_max - r_min)
+}
+
+# Ensure the terra package is loaded
+library(terra)
+
+# Normalize each layer of the raster stack
+normalize_raster <- function(r) {
+  r_min <- minmax(r)[1]
+  r_max <- minmax(r)[2]
+  (r - r_min) / (r_max - r_min)
+}
+
+raster_stack_normalized <- rast(lapply(1:nlyr(raster_stack), function(i) {
+  normalize_raster(raster_stack[[i]])
+}))
+
+# Plot the normalized raster stack
+plotRGB(raster_stack_normalized)
+```
+
+```{r}
+# Stack the aligned rasters 
+raster_stack <- rast(rasters_aligned) # Assuming band 4 is Red and band 5 is NIR (adjust if necessary) 
+red_band <- raster_stack[[4]] 
+nir_band <- raster_stack[[5]] 
+# Calculate NDVI 
+ndvi <- (nir_band - red_band) / (nir_band + red_band) 
+# Plot NDVI 
+plot(ndvi, main = "NDVI")
+```
+
+```{r}
+# Extract Band 10 (Thermal Infrared)
+thermal_band <- raster_stack[[10]]  # Assume Band 10 is at index 10, modify if needed
+
+# Get the radiance scaling factors from the metadata (usually retrieved from the XML metadata file)
+M10 <- 0.0003342  # Example, update based on metadata
+A10 <- 0.1  # Example, update based on metadata
+
+# Convert DN to radiance for Band 10
+radiance_band <- M10 * thermal_band + A10
+
+# Use Planck's Law to calculate temperature (in Kelvin)
+K1 <- 774.89
+K2 <- 1321.08
+
+temperature_kelvin <- K2 / log((K1 / radiance_band) + 1)
+
+# Convert temperature to Celsius
+temperature_celsius <- temperature_kelvin - 273.15
+
+# Plot the surface temperature
+sl<-plot(temperature_celsius, main = "Surface Temperature (°C)")
+```
+
+```{r}
+# Extract the Red (Band 4) and Near-Infrared (Band 5) bands
+red_band <- raster_stack[[4]]  # Band 4
+nir_band <- raster_stack[[5]]  # Band 5
+
+# Calculate NDVI
+ndvi <- (nir_band - red_band) / (nir_band + red_band)
+
+# Plot the NDVI result
+plot(ndvi, main = "NDVI", col = viridis(100))
+```
+
+```{r}
+# Plot RGB composite (e.g., Red, Green, Blue using Bands 4, 3, 2)
+plotRGB(raster_stack, r = 4, g = 3, b = 2, main = "True Color Composite")
+
+# Plot the first few bands
+par(mfrow = c(3, 3))  # Arrange the plot into a 3x3 grid
+for (i in 1:17) {
+  plot(raster_stack[[i]], main = paste("Band", i))
+}
+```
+
+
 
 ```{r, results='asis'}
 data %>% 
