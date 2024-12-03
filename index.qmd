@@ -1,7 +1,7 @@
 ---
 title: "Intersectional climate justice perspective: The case of extreme heat in Erie County, NY."
 author: Enoch Yeleliere
-subtitle: Subtitle here if desired
+format: hmtl
 ---
 
 # Introduction
@@ -46,28 +46,23 @@ library(rasterVis)
 library(ggmap)
 library(sf)            # For handling spatial data
 library(mapview)
-library(ggplot2)       # For plotting
+library(ggplot2) 
+# For plotting
 knitr::opts_chunk$set(cache=TRUE)  # cache the results for quick compiling
 ```
 
-## Download and clean all required data raster data (Landsat 9 collection 2 level 1)
+## Download, clean, and process data (Landsat 8 collective 2 level 1)
 
 ```{r}
 #Define boundary raster with specified extents 
 boundary <- rast(extent = c(xmin = -78.9, xmax = -78.85, ymin = 42.888, ymax = 42.92))
-print(boundary)
-```
-
-```{r}
 
 # Raster (TIF. Files) 
 tif_files <- list.files("data", pattern = "\\.TIF$", full.names = TRUE) #include only TIF files from the landsat data
 
 #Load the rasters 
 rasters <- lapply(tif_files, rast)  #the extents across the 17 TIF files are different
-```
 
-```{r}
 #Check extents, resolutions, and CRS of each raster
 extents <- lapply(rasters, ext)
 
@@ -81,9 +76,6 @@ print(common_extent)
 
 #Find common resolution
 common_res <- res(rasters[[1]])
-```
-
-```{r}
 
 # Ensure the same CRS for all rasters 
 reference_crs <- crs(rasters[[1]])
@@ -96,6 +88,7 @@ rasters <- lapply(rasters, function(r) {
 })
 ```
 
+#Crop data to depict features of erie county
 ```{r}
 #Create a reference raster with common extent and resolution
 ref_raster <- rast(extent = common_extent, res = common_res, crs = reference_crs)
@@ -105,16 +98,6 @@ rasters_aligned <- lapply(rasters, function(r) {
     r_resampled <- resample(r_cropped, ref_raster)
     return(r_resampled)
 })
-```
-
-```{r}
-image <- do.call(c, rasters_aligned)  # 'c()' is used to concatenate SpatRasters
-plot(image[[1:12]], main = "First Band of the Combined Raster")
-```
-
-```{r}
-library(terra)
-
 # Stack the aligned rasters
 raster_stack <- rast(rasters_aligned)
 
@@ -131,7 +114,25 @@ plot(raster_cropped[[1:12]], main = "First Band of the Cropped Raster")
 
 ```
 
+#Plot temperature intensity using color intensity from raster_cropped
 ```{r}
+
+# Plot RGB with stretching to handle the color intensity issue
+
+plotRGB(raster_stack, stretch="lin")
+plotRGB(raster_cropped, stretch="lin") # Linear stretch
+
+
+plotRGB(raster_stack, stretch="hist")
+plotRGB(raster_cropped, stretch="hist") # Histogram equalization stretch
+
+```
+
+#Tranform data for pattern detection and/or hotspot analysis
+```{r}
+# Load Erie County shapefile (adjust the path if necessary)
+erie_shapefile <- "data/erie.shp"
+erie_county <- st_read(erie_shapefile)
 #Extract temperature values from the cropped raster stack (first 12 bands)
 temperature_stack <- raster_cropped[[1:12]]
 plot(temperature_stack)
@@ -140,7 +141,6 @@ plot(temperature_stack)
 temperature_stack <- raster_cropped[[1:12]]
 mean_temperature <- app(temperature_stack, fun = mean, na.rm = TRUE)
 plot(mean_temperature)
-print(mean_temp_df)
 
 # Ensure the CRS of the mean temperature raster matches the Erie County shapefile
 if (crs(mean_temperature) != st_crs(erie_county)) {
@@ -155,14 +155,10 @@ plot(mean_temperature, col = temperature_palette, main = "Mean Surface Temperatu
 
 ```
 
-#try join and plot again
 ```{r}
-# Load Erie County shapefile (adjust the path if necessary)
-erie_shapefile <- "data/erie.shp"
-erie_county <- st_read(erie_shapefile)
 
 # Compute the mean temperature across the bands of the cropped raster
-temperature_stack <- raster_cropped[[1:12]]
+temperature_stack <- raster_cropped[[1:17]]
 mean_temperature <- app(temperature_stack, fun = mean, na.rm = TRUE)
 
 # Ensure the CRS of the mean temperature raster matches the Erie County shapefile
@@ -200,65 +196,145 @@ ggplot() +
        x = "Longitude", y = "Latitude") +
   theme_minimal()
 ```
-
-
-#Plot temperature intensity using color intensity
+#Map mean surface temperature
 
 ```{r}
-# Plot RGB with stretching to handle the color intensity issue
-plotRGB(raster_stack, stretch="lin") # Linear stretch
+# Compute the mean temperature across the bands of the cropped raster
+temperature_stack <- raster_cropped[[1:17]]
+mean_temperature <- app(temperature_stack, fun = mean, na.rm = TRUE)
 
-plotRGB(raster_stack, stretch="hist") # Histogram equalization stretch
+# Ensure the CRS of the mean temperature raster matches the Erie County shapefile
+if (crs(mean_temperature) != st_crs(erie_county)) {
+  erie_county <- st_transform(erie_county, crs(mean_temperature))
+}
+
+# Extend the mean temperature raster to cover the entire Erie County extent
+mean_temperature_extended <- extend(mean_temperature, ext(erie_county))
+
+# Plot the extended mean temperature raster
+# Define a color palette for the temperature
+temperature_palette <- terrain.colors(100)
+
+# Plot the mean temperature across Erie County
+plot(mean_temperature_extended, col = temperature_palette, main = "Mean Surface Temperature Across Erie County")
+plot(erie_county, add = TRUE, border = "black", lwd = 2)  # Add Erie County boundary to the plot
+
+
+```
+
+#Alternatively, I want to explore Moran's I for the hotspot analysis
+```{r}
+
+# Load required libraries
+library(terra)
+library(spdep)
+
+# Assuming 'band_10_temp_celsius' is your SpatRaster containing temperature data
+# Extract coordinates using terra::crds()
+coords <- crds(band_10_temp_celsius)  # Extract the coordinates (x and y)
+
+# Convert coordinates into a data frame for easier handling
+coords_df <- as.data.frame(coords)
+
+# View the first few rows of coordinates
+head(coords_df)
+
+#Extract raster values and remove NA values
+raster_values <- values(band_10_temp_celsius)  # Extract raster values
+raster_values <- raster_values[!is.na(raster_values)]  # Remove NAs
+
+#Create spatial weights matrix (e.g., using k-nearest neighbors)
+spatial_weights <- knn2nb(knearneigh(coords_df, k = 8))  # 8-neighbor contiguity
+
+#Compute Moran I
+# Compute Local Moran's I for the temperature raster (band_10_temp_celsius)
+local_moran <- localmoran(values(band_10_temp_celsius), spatial_weights)
+
+# Local Moran's I results
+moran_values <- local_moran[,1]  # Extract the local Moran's I statistic
+
+# Get the z-scores and p-values for significance
+moran_z_scores <- local_moran[,4]  # Z-scores for significance
+moran_p_values <- local_moran[,5]  # P-values for significance
+
+
+#Classify the results of Moran I
+# Classify the local Moran's I values
+moran_categories <- ifelse(moran_values > 0 & moran_p_values < 0.05, "HH", 
+                           ifelse(moran_values < 0 & moran_p_values < 0.05, "LL", "NS"))
+
+#Visualize results
+# Create a new raster with the classification result
+hotspot_raster_moran <- band_10_temp_celsius
+values(hotspot_raster_moran) <- moran_categories  # Assign categories to raster
+
+# Plot the results
+plot(hotspot_raster_moran, col = c("blue", "red", "white"), main = "Local Moran's I Hotspot Clusters")
+#or
+
+# Visualize the Local Moran's I results with mapview
+mapview(hotspot_raster_moran, zcol = "value", col.regions = c("blue", "red", "green"))
+
 ```
 
 
 
-```{r}
-# Extract Band 10 and Band 11 from the raster stack
-band10 <- raster_stack[[10]]  # Band 10
-band11 <- raster_stack[[11]]  # Band 11
-# Extract Band 10 and 11 (Thermal Infrared)
-# Combine Band 10 and Band 11 into a new raster stack
-thermal_band <- subset(raster_stack, c(10, 11))
-```
 
-#Calibration
+
+
+#Heat map for band 10 and 11 (Thermal Infrared-TIR1 and Thermal Infrared TIR2)
 
 ```{r}
-# Define calibration constants for Band 10 (Thermal Infrared 1)
-M10 <- 0.0003800  # Radiometric scaling factor for Band 10
-A10 <- 0.1        # Radiometric offset for Band 10
-K1_B10 <- 799.0284  # Thermal constant K1 for Band 10 (W/m²/sr/µm)
-K2_B10 <- 1329.2405 # Thermal constant K2 for Band 10 (Kelvin)
-# Define calibration constants for Band 11 (Thermal Infrared 2)
-M11 <- 0.00034900  # Radiometric scaling factor for Band 11
-A11 <- 0.1        # Radiometric offset for Band 11
-K1_B11 <- 475.6581  # Thermal constant K1 for Band 11 (W/m²/sr/µm)
-K2_B11 <- 1198.3494 # Thermal constant K2 for Band 11 (Kelvin)
-```
+# Load the necessary libraries
+library(terra)
+library(sf)
 
-#convert digital numbers (DN) to radiance
+# Assuming M10, M11, A10, A11, K1_B10, K2_B10, K1_B11, K2_B11, band10, band11, and erie_county are already defined
 
-```{r}
 # Convert DN to radiance for Band 10
-radiance_b10 <- M10 * band10 + A10
+radiance_b10 <- M10 * band10 + A10  
 
 # Convert DN to radiance for Band 11
-radiance_b11 <- M11 * band11 + A11
-
-#Use Planck's law to calculate temperature
+radiance_b11 <- M11 * band11 + A11  
 
 # Convert radiance to brightness temperature for Band 10 (in Celsius)
-brightness_temp_b10 <- (K2_B10 / log((K1_B10 / radiance_b10) + 1)) - 273.15
+brightness_temp_b10 <- (K2_B10 / log((K1_B10 / radiance_b10) + 1)) - 273.15  
 
 # Convert radiance to brightness temperature for Band 11 (in Celsius)
-brightness_temp_b11 <- (K2_B11 / log((K1_B11 / radiance_b11) + 1)) - 273.15
+brightness_temp_b11 <- (K2_B11 / log((K1_B11 / radiance_b11) + 1)) - 273.15  
 
-# Plot brightness temperature for Band 10
-plot(brightness_temp_b10, main = "Brightness Temperature - Band 10 (°C)")
+# Check and convert to raster if not already
+if (!inherits(brightness_temp_b10, "SpatRaster")) {  
+  brightness_temp_b10 <- rast(brightness_temp_b10)  # convert to SpatRaster using terra package
+}
+if (!inherits(brightness_temp_b11, "SpatRaster")) {
+  brightness_temp_b11 <- rast(brightness_temp_b11)  # convert to SpatRaster using terra package
+}
 
-# Plot brightness temperature for Band 11
-plot(brightness_temp_b11, main = "Brightness Temperature - Band 11 (°C)")
+# Combine the brightness temperatures into a stack (SpatRaster object)
+stack_thermalband <- c(brightness_temp_b10, brightness_temp_b11)
+
+# Compute the mean temperature across the bands
+mean_thermalband <- mean(stack_thermalband, na.rm = TRUE)  # using terra package's mean function
+mean_thermal_extended <- extend(mean_thermalband, ext(erie_county))
+# Plot the mean temperature
+plot(mean_thermal_extended, main = "Mean Surface Temperature")
+
+# Ensure the CRS of the mean temperature raster matches the Erie County shapefile
+if (crs(mean_thermalband) != st_crs(erie_county)) {
+  erie_county <- st_transform(erie_county, crs(mean_thermalband))
+}
+
+# Extend the mean temperature raster to cover the entire Erie County extent
+mean_temperature_extended <- extend(mean_thermalband, ext(erie_county))
+
+# Define a color palette for the temperature
+temperature_palette <- terrain.colors(100)
+
+# Plot the mean temperature across Erie County
+plot(mean_temperature_extended, col = temperature_palette, main = "Thermal bands Temperature Across Erie County")
+plot(erie_county, add = TRUE, border = "black", lwd = 2)  # Add Erie County boundary to the plot.
+
 ```
 
 ```{r}
@@ -292,43 +368,7 @@ scoff(raster_stack)=cbind(0.02,-273.15)
 plot(raster_stack[[1:12]])
 ```
 
-#Correctly load both thermal bands with straight quotes
-
-```{r}
-thermal_band <- c(brightness_temp_b10, brightness_temp_b11)
-# Convert the SpatRaster (thermal_band) to a data frame
-thermal_band_df <- as.data.frame(thermal_band, xy = TRUE)
-```
-
 #Hotspot analysis
-
-```{r}
-
-# (Band 10 and Band 11)
-# Calculate surface temperature (simple average of Band 10 and Band 11 for demonstration)
-surface_temp <- (brightness_temp_b10 + brightness_temp_b11) / 2  # In Celsius
-
-# Check if surface_temp exists and is of the correct type
-if (exists("surface_temp") && class(surface_temp) %in% c("SpatRaster", "RasterLayer")) {
-  # Convert the surface temperature raster to a data frame with x and y coordinates
-  temp_values <- as.data.frame(surface_temp, xy = TRUE, na.rm = TRUE)
-  
-  # Inspect the first few rows of the data frame
-  head(temp_values)
-} else {
-  print("The object 'surface_temp' is not correctly defined. Please check your previous steps.")
-}
-
-# Aggregate temperature data for analysis
-temp_values <- as.data.frame(surface_temp, xy = TRUE, na.rm = TRUE)
-print(temp_values)
-```
-
-```{r}
-library (sp)
-library (sf)
-coordinates(temp_values) <- ~x+y
-```
 
 ```{r}
 temp_values <- SpatialPointsDataFrame(cbind(temp_values$x, temp_values$y), temp_values)
@@ -338,20 +378,67 @@ temp_nb <- spdep::knn2nb(knearneigh(coordinates(temp_values), k = 4))
 ```
 
 ```{r}
-temp_weights <- nb2listw(temp_nb, style = "W")
+# Load required libraries
+library(terra)
+library(spdep)
+library(sf)
+library(ggplot2)
 
-# Calculate Local Moran's I for hotspot detection
-local_morans <- spdep::localmoran(temp_values$layer, temp_weights)
+# Step 1: Compute the mean temperature across the bands of the cropped raster
+temperature_stack <- raster_cropped[[1:12]]  # Using first 12 bands (temperature-related bands)
+mean_temperature <- app(temperature_stack, fun = mean, na.rm = TRUE)  # Apply mean function across bands
 
-# Add results to the data frame
-temp_values$hotspot <- local_morans[, 1]  # Local Moran's I statistic
-temp_values$zscore <- local_mzorans[, 4]  # Z-score
+# Step 2: Ensure the CRS of the mean temperature raster matches the Erie County shapefile
+if (crs(mean_temperature) != st_crs(erie_county)) {
+  erie_county <- st_transform(erie_county, crs(mean_temperature))
+}
 
-# Visualize hotspots
-ggplot(temp_values, aes(x = x, y = y, fill = zscore)) +
-  geom_tile() +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
-  labs(title = "Surface Temperature Hotspots", fill = "Z-Score")
+# Step 3: Extend the mean temperature raster to cover the entire Erie County extent
+mean_temperature_extended <- extend(mean_temperature, ext(erie_county))  # Extend raster to Erie County boundary
+
+# Step 4: Convert the extended mean temperature raster to a data frame for analysis
+mean_temp_df <- as.data.frame(mean_temperature_extended, xy = TRUE, na.rm = TRUE)  # Ensure the columns are named properly
+colnames(mean_temp_df) <- c("x", "y", "mean_temp")  # x, y for coordinates, and mean_temp for temperature
+
+# Step 5: Create a spatial points object from the data frame
+mean_temp_sf <- st_as_sf(mean_temp_df, coords = c("x", "y"), crs = st_crs(erie_county))
+
+# Step 6: Define spatial weights for Moran’s I (using a queen contiguity matrix)
+# We use a distance threshold to define neighbors (you may adjust distance as needed)
+coords <- st_coordinates(mean_temp_sf)  # Extract coordinates
+
+# Check CRS and use appropriate projection (assumes meter-based distance)
+if (st_crs(mean_temp_sf)$units != "m") {
+  # If not in meters, reproject to a CRS with meters as units (e.g., UTM)
+  mean_temp_sf <- st_transform(mean_temp_sf, crs = 26918)  # Example: UTM zone 18N (adjust CRS as needed)
+  coords <- st_coordinates(mean_temp_sf)
+}
+
+# Create neighbors list based on distance (5 km threshold)
+neighbors <- dnearneigh(coords, 0, 5000)  # Distance of 5 km (5000 meters)
+weights <- nb2listw(neighbors, style = "W", zero.policy = TRUE)  # Convert to weights list
+
+# Step 7: Compute Moran's I
+# Perform the Moran's I test on the 'mean_temp' variable using the spatial weights
+morans_i_result <- moran.test(mean_temp_df$mean_temp, weights)  # Moran's I computation
+
+# Check if Moran's I calculation was successful
+print(morans_i_result)
+
+# Step 8: Map the results
+# Add Moran's I to the data frame for visualization
+mean_temp_df$morans_i <- morans_i_result$estimate[1]  # Moran's I value
+
+# Plot Moran's I result as a heatmap
+ggplot(mean_temp_df) +
+  geom_tile(aes(x = x, y = y, fill = mean_temp)) +  # Plot temperature as a raster
+  scale_fill_viridis_c(option = "plasma", name = "Mean Temp (°C)") +
+  geom_sf(data = erie_county, fill = NA, color = "black", lwd = 0.5) +  # Erie County boundary
+  coord_sf() +
+  labs(title = paste("Mean Surface Temperature and Moran's I Hotspot Analysis\nMoran's I: ", round(morans_i_result$estimate[1], 3)),
+       x = "Longitude", y = "Latitude") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 ```
 
@@ -489,7 +576,7 @@ Add any additional processing steps here.
 
 # Results
 
-[\~200 words]
+\[\~200 words\]
 
 Tables and figures (maps and other graphics) are carefully planned to convey the results of your analysis. Intense exploration and evidence of many trials and failures. The author looked at the data in many different ways before coming to the final presentation of the data.
 
@@ -511,7 +598,7 @@ data %>%
 
 # Conclusions
 
-[\~200 words]
+\[\~200 words\]
 
 Clear summary adequately describing the results and putting them in context. Discussion of further questions and ways to continue investigation.
 
