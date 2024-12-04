@@ -330,9 +330,6 @@ if (st_crs(erie_county) != st_crs(age_data)) {
 
 # Perform the spatial join
 age_merged <- st_join(erie_county, age_data, join = st_intersects)
-
-# Optional: Validate the merged data
-summary(age_merged)
 ```
 
 
@@ -381,11 +378,64 @@ Tables and figures (maps and other graphics) are carefully planned to convey the
 Show tables, plots, etc. and describe them.
 
 ```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
-m <- leaflet(data) %>% 
-  addTiles() %>% 
-  addCircleMarkers(~x, ~y, radius = ~size,color = ~as.factor(category)) %>% 
-  addPopups(~x[2], ~y[2], "Random popup")
-m  # a map with the default OSM tile layer
+
+# Downsample the cropped raster by a factor of 4 (adjust based on your needs)
+ndvi_cropped_resampled <- aggregate(ndvi_cropped, fact = 4)
+
+# Use the downsampled raster in the map
+ndvi_map <- leaflet() %>%
+  addTiles() %>%
+  addRasterImage(ndvi_resampled, colors = ndvi_palette, opacity = 0.7, group = "NDVI") %>%
+  addLegend(position = "topright", 
+            pal = colorNumeric(palette = ndvi_palette, domain = values(ndvi_resampled)), 
+            values = values(ndvi_resampled), 
+            title = "NDVI") 
+# Display the map
+ndvi_map
+
+```
+
+```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
+ndbi_map<- leaflet() %>%
+  addTiles() %>%
+addRasterImage(ndbi_resampled, colors = ndbi_palette, opacity = 0.7, group = "NDBI") %>%
+  addLegend(position = "topright", 
+            pal = colorNumeric(palette = ndbi_palette, domain = values(ndbi_resampled)), 
+            values = values(ndbi_resampled), 
+            title = "NDBI")
+#Display
+ndbi_map
+
+```
+
+
+```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
+lst_map<- leaflet() %>%
+  addTiles() %>%
+  addRasterImage(lst_resampled, colors =
+                   lst_palette, opacity = 0.7, group = "LST (°C)") %>%
+  addLegend(position = "topright", 
+            pal = colorNumeric(palette = lst_palette, domain = values(lst_resampled)), 
+            values = values(lst_resampled), 
+            title = "LST (°C)")
+#Display map
+lst_map
+```
+
+
+```{r}
+ uhri <- leaflet() %>%
+  addTiles() %>%addRasterImage(uhri_resampled, colors = uhri_palette, opacity = 0.7, group = "UHRI") %>%
+  addLegend(position = "topright", 
+            pal = colorNumeric(palette = uhri_palette, domain = values(uhri_resampled)), 
+            values = values(uhri_resampled), 
+            title = "UHRI") %>%
+  addLayersControl(
+    overlayGroups = c("NDVI", "NDBI", "LST (°C)", "UHRI"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+#display
+uhri
 ```
 
 
