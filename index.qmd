@@ -233,118 +233,15 @@ box()
 ```
 
 
-
-
-#Prepare census data for socio-demographic characteristics
+##Prepare census data for socio-demographic characteristics
 ```{r}
-# Set your census API key (Replace with your key)
-census_api_key("677c6e6ec5f3c8621d7b139013d29cb61cf4dcdd", overwrite = TRUE, install = TRUE)
-
-```
-
-
-#Download Block level census data
-#Race
-```{r}
-# Define the race variables
-race_vars <- c(
-  "Total Population" = "P1_001N",
-  "White alone" = "P1_003N",
-  "Black or African American alone" = "P1_004N",
-  "American Indian and Alaska Native alone" = "P1_005N",
-  "Asian alone" = "P1_006N",
-  "Native Hawaiian and Other Pacific Islander alone" = "P1_007N",
-  "Some Other Race alone" = "P1_008N",
-  "Two or More Races" = "P1_009N"
-)
-
-
-```
-
-
-#Age
-```{r}
-# Define the age variables
-age_vars <- c(
-  "Total Population" = "P1_001N",
-  "Under 5 years" = "P1_003N",
-  "5 to 9 years" = "P1_004N",
-  "10 to 14 years" = "P1_005N",
-  "15 to 19 years" = "P1_006N",
-  "20 to 24 years" = "P1_007N",
-  "25 to 34 years" = "P1_008N",
-  "35 to 44 years" = "P1_009N",
-  "45 to 54 years" = "P1_010N",
-  "55 to 64 years" = "P1_011N",
-  "65 to 74 years" = "P1_012N",
-  "75 to 84 years" = "P1_013N",
-  "85 years and over" = "P1_014N"
-)
-
-```
-
-
-
-
-```{r}
-# Get census data for race, age, and income
-options(tigris_use_cache = TRUE)
-
-# Download race data
-erie_race <- get_decennial(geography = "block", variables = race_vars, year=2020,
-                           state = "NY", county = "Erie County", geometry = TRUE,
-                           sumfile = "pl", cache_table = TRUE)
-
-# Download age data
-erie_age <- get_decennial(geography = "block", variables = age_vars, year=2020,
-                           state = "NY", county = "Erie County", geometry = TRUE,
-                           sumfile = "pl", cache_table = TRUE)
-
-```
-#Analysis
-```{r}
-# Join temperature data with the census data for blocks
-# First, extract the values from the hotspot_layer to match spatially with the census data
-hotspot_values <- extract(hotspot_layer, erie_race)
-
-# Convert the hotspot data to a data frame for merging
-hotspot_df <- data.frame(block_id = erie_race$GEOID, hotspot = hotspot_values)
-
-# Merge with the census race data
-census_race_data <- merge(erie_race, hotspot_df, by = "block_id")
-
-# Now you can analyze relationships between surface temperature hotspots and race, age, etc.
-# For example, you could use ggplot to visualize the relationship
-ggplot(census_race_data) +
-  geom_sf(aes(fill = hotspot)) +
-  scale_fill_manual(values = c("0" = "white", "1" = "red")) +
-  theme_minimal() +
-  labs(title = "Surface Temperature Hotspots in Erie County by Race")
-
-```
-
-```{r}
-# Plot RGB composite (e.g., Red, Green, Blue using Bands 4, 3, 2)
-plotRGB(raster_stack, r = 4, g = 3, b = 2, main = "True Color Composite")
-
-# Plot the first few bands
-par(mfrow = c(4, 4))  # Arrange the plot into a 4x4 grid
-for (i in 1:12) {
-  plot(raster_stack[[i]], main = paste("Band", i))
-}
-```
-
-
-## Prepare census data for socio-demographic characteristics
-
-```{r}
+install.packages("tigris")
+library(tigris)
 library(tidycensus)
-census_api_key("677c6e6ec5f3c8621d7b139013d29cb61cf4dcdd", overwrite = TRUE, install = TRUE)
-```
+census_api_key("677c6e6ec5f3c8621d7b139013d29cb61cf4dcdd")
 
-```{r}
 #download block data
-# Define the race variables
+# Define the variables for race, age, and income
 race_vars <- c(
   "Total Population" = "P1_001N",
   "White alone" = "P1_003N",
@@ -355,22 +252,7 @@ race_vars <- c(
   "Some Other Race alone" = "P1_008N",
   "Two or More Races" = "P1_009N"
 )
-```
 
-```{r}
-# Get census data for race
-options(tigris_use_cache = TRUE)
-erie_race <- get_decennial(geography = "block", variables = race_vars, year=2020,
-                  state = "NY", county = "Erie County", geometry = TRUE,
-                  sumfile = "pl", 
-                  cache_table=T) 
-```
-
-```{r}
-erie_county<-sf_read("data"/Erie_County.shp)
-```
-
-```{r}
 age_vars <- c(
   "Total Population" = "P1_001N",
   "Under 5 years" = "P1_003N",
@@ -386,17 +268,7 @@ age_vars <- c(
   "75 to 84 years" = "P1_013N",
   "85 years and over" = "P1_014N"
 )
-```
 
-```{r}
-# Get census data for age
-options(tigris_use_cache = TRUE)
-erie_age <- get_decennial(geography = "block", variables = age_vars, year = 2020,
-                          state = "NY", county = "Erie County", geometry = TRUE,
-                          sumfile = "pl", cache_table = TRUE)
-```
-
-```{r}
 income_vars <- c(
   "Total Households" = "B19001_001",
   "Less than $10,000" = "B19001_002",
@@ -416,60 +288,93 @@ income_vars <- c(
   "$150,000 to $199,999" = "B19001_016",
   "$200,000 or more" = "B19001_017"
 )
-```
 
-```{r}
-# Define your income variable (e.g., B19001_001 for total household income)
-income_vars <- c("B19001_001")
-# Query ACS 5-year estimates at the Block Group level (since block-level data isn't available)
-erie_income <- get_acs(
-  geography = "block group",  # Change from block to block group or tract
-  variables = income_vars,
-  year = 2021,  # 5-year estimates for 2021
-  state = "NY",  # New York State
-  county = "Erie",  # Erie County
-  geometry = TRUE  # Include geometry (spatial data)
+# Fetch census data for race, age, and income
+race_data <- get_decennial(
+  geography = "block group",
+  variables = race_vars,
+  state = "NY", county = "Erie",
+  year = 2020,
+  geometry = TRUE
 )
+
+age_data <- get_decennial(
+  geography = "block group",
+  variables = age_vars,
+  state = "NY", county = "Erie",
+  year = 2020,
+  geometry = TRUE
+)
+
+income_data <- get_acs(
+  geography = "block group",
+  variables = income_vars,
+  state = "NY", county = "Erie",
+  year = 2020,
+  geometry = TRUE
+)
+
 ```
 
-##Combine socio-demographic data
+#Join census data and shapefiles
+```{r}
+
+# Check the CRS of the Erie County shapefile and age data
+st_crs(erie_county)  # CRS of the Erie County shapefile
+st_crs(age_data)     # CRS of the age data
+
+# If CRS do not match, transform 'age_data' to match the CRS of the Erie County shapefile
+if (st_crs(erie_county) != st_crs(age_data)) {
+  age_data <- st_transform(age_data, st_crs(erie_county))
+}
+
+# Perform the spatial join
+age_merged <- st_join(erie_county, age_data, join = st_intersects)
+
+# Optional: Validate the merged data
+summary(age_merged)
+```
+
 
 ```{r}
-# Perform sequential spatial joins 
-race_age_data <- st_join(erie_race, erie_age) 
-combined_data <- st_join(race_age_data, erie_income)
+
+# Define color palettes
+ndvi_palette <- colorRampPalette(c("red", "yellow", "green"))(100)
+ndbi_palette <- colorRampPalette(c("white", "blue", "black"))(100)
+lst_palette <- colorRampPalette(c("white", "blue", "red"))(100)
+uhri_palette <- colorRampPalette(c("white", "orange", "purple"))(100)
+
+# Ensure the CRS of `age_merged` and raster layers match (if not, transform `age_merged`)
+# Check CRS of age_merged
+st_crs(age_merged)  # This should match the CRS of your rasters
+
+# If CRS is different, transform age_merged to match the raster CRS
+age_merged <- st_transform(age_merged, crs = crs(ndvi))  # Replace `ndvi` with your raster object if needed
+
+# Set up a 2x2 plot layout
+par(mfrow = c(2, 2))
+
+# Plot NDVI with bright colors
+plot(ndvi, main = "NDVI", col = ndvi_palette, legend = TRUE)
+plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Overlay age_merged polygons
+
+# Plot NDBI with bright colors
+plot(ndbi, main = "NDBI", col = ndbi_palette, legend = TRUE)
+plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Overlay age_merged polygons
+
+# Plot LST with bright colors
+plot(lst, main = "LST (°C)", col = lst_palette, legend = TRUE)
+plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Overlay age_merged polygons
+
+# Plot UHRI with bright colors
+plot(uhri, main = "UHRI", col = uhri_palette, legend = TRUE)
+plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Overlay age_merged polygons
+
 ```
 
-```{r}
-# define census region using a spatial bounding box and rasterize data
-bbox<-st_bbox(erie_race, erie_age, erie_income)
-domain <- raster(resolution=0.008,crs=projection(erie_race),               xmn=bbox$xmin,xmx=bbox$xmax,ymn=bbox$ymin,ymx=bbox$ymax)
-```
 
-```{r}
-n=20
-data=data.frame(x=runif(n,-180,180),
-                y=runif(n,-60,60),
-                size = runif(n, 5, 20),
-                category = factor(
-                  sample(letters[1:5], n, replace = TRUE)
-                  ),
-                value = rnorm(n))
-```
-
-```{r, results='asis'}
-data %>% 
-  slice(1:10) %>% #show only 1:n rows
-  kable(digits=2,align="c")%>% #make table and round to two digits
-  kable_styling(bootstrap_options = 
-                  c("striped", "hover", "condensed", "responsive")) #apply other formatting
-```
-
-Add any additional processing steps here.
 
 # Results
-
-\[\~200 words\]
 
 Tables and figures (maps and other graphics) are carefully planned to convey the results of your analysis. Intense exploration and evidence of many trials and failures. The author looked at the data in many different ways before coming to the final presentation of the data.
 
@@ -483,15 +388,9 @@ m <- leaflet(data) %>%
 m  # a map with the default OSM tile layer
 ```
 
-```{r}
-data %>% 
-  ggplot(aes(x=x,y=y,col=category))+
-  geom_point()
-```
+
 
 # Conclusions
-
-\[\~200 words\]
 
 Clear summary adequately describing the results and putting them in context. Discussion of further questions and ways to continue investigation.
 
