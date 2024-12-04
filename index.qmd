@@ -1,7 +1,9 @@
 ---
-title: "Intersectional climate justice perspective: The case of extreme heat in Erie County, NY."
-author: Enoch Yeleliere
-format: hmtl
+title: "Intersectional climate justice perspective: The case of extreme heat in Erie County, NY"
+author: "Enoch Yeleliere"
+output:
+       github_document
+       html_document
 ---
 
 # Introduction
@@ -18,9 +20,8 @@ ii) How do socio-demographic, economic, and spatial factors intersect to shape t
 
 # Materials and methods
 
-The study used multiple data sources to examine the socioeconomic features of census tracts including the cloud-free 30-m-resolution Landsat 8 satellite from the United States Geological Survey (USGS), surface temperature (APPEARS), and 5-year estimate American Community Survey (ACS) provided by the US Census Bureau (<https://www.census.gov/>) or Tidy census.
+The study used multiple data sources to examine the socioeconomic features of census tracts including the cloud-free 30-m-resolution Landsat 8 satellite from the United States Geological Survey (USGS), surface temperature, and 5-year estimate American Community Survey (ACS) provided by the US Census Bureau (<https://www.census.gov/>).
 
-The study employs spatial regression analysis to investigate the relationship between heat risk—measured by land surface temperature—and the presence of racial minorities, low-income residents, and elderly populations. Additionally, the study identifies variations in spatial pattern variables among these vulnerable groups, categorizing them as low, medium, or high risk. Census tracts with a z-score greater than 1 are classified as “high risk,” those with a z-score lower than -1 are classified as “low risk,” while the remaining tracts are designated as “medium risk.” Subsequently, the study utilizes analysis of variance (ANOVA) to assess the significance of spatial pattern variations among these groups and examines how these disparities contribute to heat inequity.
 
 #Load required packages:
 
@@ -334,6 +335,8 @@ age_merged <- st_join(erie_county, age_data, join = st_intersects)
 
 
 ```{r}
+# Define a color palette for the age data (assuming 'age_merged' has a numeric age variable)
+age_palette <- colorRampPalette(c("lightblue", "blue", "darkblue"))(100)
 
 # Define color palettes
 ndvi_palette <- colorRampPalette(c("red", "yellow", "green"))(100)
@@ -364,8 +367,12 @@ plot(lst, main = "LST (°C)", col = lst_palette, legend = TRUE)
 plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Overlay age_merged polygons
 
 # Plot UHRI with bright colors
-plot(uhri, main = "UHRI", col = uhri_palette, legend = TRUE)
-plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Overlay age_merged polygons
+# Assuming 'uhri' is a RasterLayer object (from the raster package)
+library(raster)
+
+# Define the color palette for UHRI (adjust the palette if needed)
+uhri_palette <- colorRampPalette(c("white", "orange", "purple"))(100)
+
 
 ```
 
@@ -373,9 +380,7 @@ plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Ov
 
 # Results
 
-Tables and figures (maps and other graphics) are carefully planned to convey the results of your analysis. Intense exploration and evidence of many trials and failures. The author looked at the data in many different ways before coming to the final presentation of the data.
 
-Show tables, plots, etc. and describe them.
 
 ```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
 
@@ -437,8 +442,6 @@ lst_map
 #display
 uhri
 ```
-
-
 
 # Conclusions
 
