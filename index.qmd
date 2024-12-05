@@ -232,16 +232,36 @@ plot(uhri, col = uhri_palette(100), main = "UHRI", axes = FALSE)
 box()
 
 ```
+```{r}
+ndvi_flat <- as.numeric(values(ndvi))
+ndbi_flat <- as.numeric(values(ndbi))
+lst_flat <- as.numeric(values(lst))
 
+data <- data.frame(NDVI = ndvi_flat, NDBI = ndbi_flat, LST = lst_flat)
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(data, use = "complete.obs")
+
+# Print the correlation matrix
+print(correlation_matrix)
+
+# Plot the correlation matrix
+corr_plot<-corrplot(correlation_matrix, method = "color", col = colorRampPalette(c("blue", "white", "red"))(200), 
+         tl.col = "black", tl.srt = 45, addCoef.col = "black", number.cex = 0.7, cl.cex = 0.7, 
+         main = "Correlation Matrix of NDVI, NDBI, and LST")
+#Display
+corr_plot
+```
 
 ##Prepare census data for socio-demographic characteristics
 ```{r}
 install.packages("tigris")
-library(tigris)
 library(tidycensus)
+library(dplyr)
+
+# Set your Census API key
 census_api_key("677c6e6ec5f3c8621d7b139013d29cb61cf4dcdd")
 
-#download block data
 # Define the variables for race, age, and income
 race_vars <- c(
   "Total Population" = "P1_001N",
@@ -290,31 +310,10 @@ income_vars <- c(
   "$200,000 or more" = "B19001_017"
 )
 
-# Fetch census data for race, age, and income
-race_data <- get_decennial(
-  geography = "block group",
-  variables = race_vars,
-  state = "NY", county = "Erie",
-  year = 2020,
-  geometry = TRUE
-)
-
-age_data <- get_decennial(
-  geography = "block group",
-  variables = age_vars,
-  state = "NY", county = "Erie",
-  year = 2020,
-  geometry = TRUE
-)
-
-income_data <- get_acs(
-  geography = "block group",
-  variables = income_vars,
-  state = "NY", county = "Erie",
-  year = 2020,
-  geometry = TRUE
-)
-
+# Download the data
+race_data <- get_decennial(geography = "block group", variables = race_vars, year = 2020, state = "NY", county = "Erie", geometry = TRUE)
+age_data <- get_decennial(geography = "block group", variables = age_vars, year = 2020, state = "NY", county = "Erie", geometry = TRUE)
+income_data <- get_acs(geography = "block group", variables = income_vars, year = 2020, state = "NY", county = "Erie", geometry = TRUE)
 ```
 
 #Join census data and shapefiles
@@ -379,8 +378,9 @@ uhri_palette <- colorRampPalette(c("white", "orange", "purple"))(100)
 
 
 # Results
+The results showed that UHI was  unequally distributed across Erie County.
 
-
+Also, high heat risk were concentrated in the urban core.For the second question—How is the spatial pattern of urban heat risk linked to the socio-economic characteristics of residents?
 
 ```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
 
