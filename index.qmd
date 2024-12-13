@@ -462,13 +462,16 @@ plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Ov
 
 ## 3.0 Results
 
-The results show
-The results showed that UHI was unequally distributed across Erie County.
+The results from the plots reveal contrasting patterns between vegetation and urbanization. Vegetation areas are represented by NDVI values ranging from -1 to 1, with low vegetation in red, moderate vegetation in yellow, and high vegetation in green. In contrast, urbanized areas are represented by NDBI values, which range from brown (low urbanization) to blue (high urbanization). The results empirically illustrate that areas with low to moderate vegetation and high levels of urbanization (as indicated by higher NDBI values) are most likely hotspots for the urban heat effect (UHE). This is due to the dense population and limited vegetation in these areas, which leads to higher land surface temperatures.
 
-Also, high heat risk were concentrated in the urban core. For the second question—How is the spatial pattern of urban heat risk linked to the socio-economic characteristics of residents?
+To effectively mitigate the urban heat effect and enhance carbon capture, it is essential to prioritize interventions that increase green infrastructure. Expanding vegetation in urban areas can help reduce the impacts of UHE by cooling the environment.
+
+The land surface temperature (LST) maps further confirm this pattern of heat accumulation, with hotter areas (shown in red) strongly correlating with densely built-up urban zones. The Urban Heat Risk Index (UHRI), which combines temperature, built-up areas, and vegetation, also highlights regions at high risk of extreme heat. Areas with high UHRI values, shown in red, are particularly vulnerable to extreme heat, reflecting a direct relationship between high temperatures, urbanization, and low vegetation cover. These findings are crucial for identifying and prioritizing areas for mitigation strategies. Targeting these areas in urban climate action planning is essential to reduce the impacts of heatwaves, particularly on vulnerable socio-economic groups.
+
+Additionally, overlaying socio-demographic data (specifically age) with the environmental indices (NDVI, NDBI, LST, and UHRI) reveals likely disparities in heat vulnerability. This underscores the intersectional nature of heat risk, where socio-economic factors such as race and income can amplify exposure to extreme heat. Vulnerable populations, such as low-income and minority communities, are disproportionately affected by UHE, highlighting the need for equitable climate action that addresses both environmental and social inequalities. 
 
 
-```{r}
+```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
 # Install and load required packages if not already done
 install.packages("raster")
 library(raster)
@@ -525,69 +528,16 @@ map
 ```
 
 
-
-```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
-# Load necessary libraries
-library(leaflet)
-library(raster)
-
-# Assuming 'ndbi_resampled' exists and is correctly created by downsampling the NDBI raster
-# Create a color palette for NDBI using a numeric color palette
-ndbi_resampled_pal <- colorNumeric(palette = "YlGnBu", domain = values(ndbi_resampled))
-
-# Create the interactive leaflet map
-leaflet() %>%
-  addTiles() %>%  # Add OpenStreetMap base layer
-  addRasterImage(ndbi_resampled, 
-                 colors = ndbi_resampled_pal, 
-                 opacity = 0.7, 
-                 group = "NDBI") %>%  # Add the downsampled NDBI layer
-  addLegend(pal = ndbi_resampled_pal, 
-            values = values(ndbi_resampled), 
-            title = "NDBI", 
-            opacity = 1) %>%  # Add a color legend for NDBI
-  addLayersControl(
-    overlayGroups = c("NDBI"), 
-    options = layersControlOptions(collapsed = FALSE)  # Add layer control
-  ) %>%
-  setView(lng = -80.12, lat = 42.12, zoom = 8)  # Set initial map view (centered around Erie County)
-
-```
-
-```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
-lst_map<- leaflet() %>%
-  addTiles() %>%
-  addRasterImage(lst_resampled, colors =
-                   lst_palette, opacity = 0.7, group = "LST (°C)") %>%
-  addLegend(position = "topright", 
-            pal = colorNumeric(palette = lst_palette, domain = values(lst_resampled)), 
-            values = values(lst_resampled), 
-            title = "LST (°C)")
-#Display map
-lst_map
-```
-
-```{r}
- uhri <- leaflet() %>%
-  addTiles() %>%addRasterImage(uhri_resampled, colors = uhri_palette, opacity = 0.7, group = "UHRI") %>%
-  addLegend(position = "topright", 
-            pal = colorNumeric(palette = uhri_palette, domain = values(uhri_resampled)), 
-            values = values(uhri_resampled), 
-            title = "UHRI") %>%
-  addLayersControl(
-    overlayGroups = c("NDVI", "NDBI", "LST (°C)", "UHRI"),
-    options = layersControlOptions(collapsed = FALSE)
-  )
-#display
-uhri
-```
-
 ## 4.0 Conclusions
-I examined the spatial pattern of LST in Erie county. I used a Landsat 8 data to estimate land surface temperatures and urban form composition indices for built-up (NDBI) and vegetation (NDVI), obtaining the urban heat risk index. The results showed that the region was experiencing UHIs, which were unequally distributed across the study area.
 
-Future works
-To examine the spatial relationships between urban heat risk and vulnerable social groups (race, age, income).
+The study provides an understanding of the spatial patterns of urban heat risk and the intersectional vulnerabilities of different communities in Erie County. The study used Landsat 8 Collection 2 level 1 remote sensing data coupled with spatial data analysis to establish patterns using environmental indies (NDBI, NDVI, LST, and UHRI). These findings shows:
+Areas with high urbanization and low vegetation (high NDBI and low NDVI) are at the highest risk of extreme heat.
+The Urban Heat Risk Index (UHRI) clearly identifies hotspots where mitigation efforts should be concentrated.
+Vulnerable populations, particularly those in low-income and minority communities, are disproportionately affected by the Urban Heat Effect, necessitating targeted climate action planning for environmental and climate justice.
+In conclusion, the study provides pointers to areas essential for designing effective strategies to reduce the impacts of extreme heat and ensure equitable access to cooling and green infrastructure across all communities.
 
+Future Research: 
+Future work should explore the spatial relationships between urban heat risk and vulnerable social groups (e.g., race, age, income) across different temporal scales, such as through time series analysis.
 
 
 # References
