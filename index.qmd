@@ -4,25 +4,43 @@ author: "Enoch Yeleliere"
 output:
        github_document
        html_document
+date: 12/13/2024
 ---
 
-# Introduction
+# 1.0 Introduction
 
-The rise in global temperatures above pre-industrial levels, coupled with rapid urbanization—projected to exceed 70% by 2050 (UN DESA, 2018)—has led to increased greenhouse gas emissions, exacerbating the Urban Heat Effect (UHE) (Jung et al., 2024). This phenomenon has made summers increasingly difficult, especially in parts of the United States (US), with profound socio-ecological impacts and disruptions. The escalation of extreme heat has created significant environmental and social challenges, raising critical concerns related to environmental and climate justice (Mitchell and Chakraborty, 2014). Heatwaves not only contribute to health complications—such as respiratory and cardiovascular issues—but also degrade urban environmental quality, diminishing residents' overall quality of life (Li et al., 2019). These changes are further evidenced by increased electricity consumption during the summer months, as residents rely on air conditioning to mitigate heat risks. However, this reliance creates additional challenges, including disparities in access to cooling systems for vulnerable groups and a 19% rise in energy consumption, leading to higher electricity costs for residents (Li et al., 2019).
+The rise in global temperatures above pre-industrial levels, combined with rapid urbanization projected to exceed 70% by 2050 (UN DESA, 2018), is expected to escalate greenhouse gas emissions and significantly intensify the Urban Heat Effect (UHE) (Jung et al., 2024). The UHE phenomenon has made summers increasingly unbearable, particularly in parts of the United States, with profound socio-ecological impacts. These include negative health effects, such as respiratory and cardiovascular issues, and increased energy consumption due to the growing reliance on air conditioning to mitigate heat risks. The UHE also disrupts ecological and economic cycles, further exacerbating the challenges faced by urban areas. Heatwaves not only contribute to health complications but also degrade urban environmental quality, diminishing the overall quality of life for residents (Li et al., 2019).
 
-Urban areas with limited urban green infrastructure (UGI) are particularly susceptible to heat risks, as the absence of green spaces correlates with poor air quality and reduced cooling effects (Chen, 2024; Wilby, 2008). While much research has focused on the Urban Heat Island (UHI) effect, often through a climate or environmental justice lens, fewer studies explore the intersectional dimensions of climate justice. Such an intersectional approach integrates factors like surface temperature, socio-demographic characteristics, and the presence of UGI to better understand how vulnerability to heat risk varies across different communities.
+These concerns are compounded by rapid urbanization, escalating extreme weather events, and the diminishing availability of green infrastructure, all of which are projected to amplify the magnitude and severity of the UHE (Chen, 2024). The unequal distribution of the impacts of UHE across different spatial scales, particularly in marginalized communities, has raised concerns about environmental and climate justice (Heck, 2021; Mitchell and Chakraborty, 2014). In addition, the quest for cooling systems in households to mitigate heat effects introduces further disparities. Vulnerable groups often face difficulties accessing such cooling systems, contributing to a 19% increase in energy consumption, which drives up electricity costs for residents (Li et al., 2019). This underscores the urgent need to address these disparities through urban climate action planning that takes into account inequalities, particularly in the distribution of urban heat.
 
-This perspective is particularly relevant given the history of systemic discrimination in US cities, where practices like redlining have reduced green infrastructure in minority neighborhoods and intensified racial segregation. In this context, the study addresses the following research questions:
+Urban areas with limited green infrastructure (UGI) or vegetation cover are particularly susceptible to heat risks, as the lack of green spaces correlates with poor air quality and reduced cooling effects (Chen, 2024; Wilby, 2008). While much research has focused on the Urban Heat Island (UHI) effect, often through a climate or environmental justice lens, fewer studies have adopted an intersectional approach that considers multiple factors, such as surface temperature, socio-demographic characteristics, and the presence of UGI. An intersectional approach helps to better understand how vulnerability to heat risks varies across different communities.
 
-i)  What are the spatial patterns of heat risk in Erie County, New York?
+This perspective is particularly relevant given the history of systemic discrimination in U.S. cities, where practices like redlining have reduced green infrastructure in minority neighborhoods, exacerbating racial segregation and intensifying heat vulnerability. In light of these issues, the study aims to answer the following research questions:
 
-ii) How do socio-demographic, economic, and spatial factors intersect to shape the vulnerability of different groups?
+i). What are the spatial patterns of heat risk in Erie County, New York?
+ii) Which areas in Erie County are hotspots for the Urban Heat Effect?
+iii). How do socio-demographic, economic, and spatial factors intersect to shape the vulnerability of different groups to heat risks?
 
-# Materials and methods
+# 2.0 Materials and methods
 
-The study used multiple data sources to examine the socioeconomic features of census tracts including the cloud-free 30-m-resolution Landsat 8 satellite from the United States Geological Survey (USGS), surface temperature, and 5-year estimate American Community Survey (ACS) provided by the US Census Bureau (<https://www.census.gov/>).
+To address the three research questions, I used remote sensing and exploratory spatial data science techniques. First, I obtained satellite imagery from Landsat 8 Collection 2, Level 1, taken in November 2024, from the United States Geological Survey (USGS) via the EarthExplorer platform (<https://earthexplorer.usgs.gov/>). The choice of Landsat data was driven by its higher resolution compared to other available datasets, making it more suitable for this type of analysis. This satellite data was used to estimate key indices such as Land Surface Temperature (LST), Normalized Difference Vegetation Index (NDVI), Normalized Difference Built-up Index (NDBI), and the Urban Heat Risk Index (UHRI) in Erie County.
 
-#Load required packages:
+The UHRI is mathematically expressed as:
+UHRI = (LST + NDBI)-NDVI (Mitchell and Chakraborty, 2015). 
+
+In this equation, the NDBI represents the built environment features of urban areas, ranging from non-urbanized forms (-1) to highly urbanized forms (+1). The NDVI, which reflects vegetative cover in urban areas, ranges from minimal vegetation (-1) to abundant vegetation (+1). I calculated the mean values of LST, NDVI, and NDBI, which were then used to create spatial maps for analysis.
+
+To explore intersectionality, the study incorporated socioeconomic data on variables that identify minority populations and/or vulnerable groups in Erie County. These variables included race, median income, and age, sourced from the 5-year estimates of the American Community Survey (ACS), provided by the U.S. Census Bureau (<https://www.census.gov/>).
+
+Key step:
+Download data
+Prepare, clean, and process data
+Visualize data and
+Conduct analysis
+
+To answer the study objectives, the following procedure was followed and executed:
+
+## 1. Load packages that are need to conduct this analysis (NB. All the packages are already installed from prior works):
 
 ```{r, message=F, warning=F}
 # Load necessary libraries
@@ -38,7 +56,9 @@ library(raster)      # For raster data manipulation
 
 ```
 
-## Download, clean, and process data (Landsat 8 collective 2 level 1)
+
+
+## 2. Download, clean, and process data (Landsat 8 collective 2 level 1)
 
 ```{r}
 # Key Steps
@@ -101,7 +121,7 @@ erie_boundary_vect <- vect(erie_county)  # Convert sf object to SpatVector for r
 raster_cropped <- crop(raster_stack, erie_boundary_vect)  # Crop the raster stack to the Erie County boundary
 ```
 
-#Display plots
+## 3. Visualize data and display plots
 
 ```{r}
 #Plot the cropped raster (first 12 bands)
@@ -121,7 +141,7 @@ if (crs(mean_temperature) != st_crs(erie_county)) {
 
 ```
 
-#Display temperature intensity
+## Display temperature intensity from the cropped file (raster_cropped)
 
 ```{r}
 # Plot temperature intensity using color intensity from raster_cropped
@@ -148,7 +168,7 @@ plotRGB(raster_cropped, stretch = "hist")
 plotRGB(raster_cropped, stretch="hist") # Histogram equalization stretch
 ```
 
-#Display mean plot
+## Display mean plot
 
 ```{r}
 # Define a color palette for the temperature plot
@@ -166,6 +186,8 @@ plot(mean_temperature, col = temperature_palette,
 
 ```
 
+## 4. Analysis (establishing patterns from the data-hotspot analysis using the mean_temperature)
+
 ```{r}
 # Perform hotspot analysis based on the 90th percentile of temperature values
 
@@ -181,14 +203,15 @@ percentile_90 <- quantile(temperature_values, 0.90, na.rm = TRUE)
 hotspot_layer <- mean_temperature >= percentile_90
 
 # Plot the hotspot layer
-plot(hotspot_layer, main = "Surface Temperature Hotspots in Erie County")  
+plot(hotspot_layer, main = "Surface Temperature Hotspots in Erie County") 
+#Interpretation
 # The `plot()` function will visualize the binary hotspot layer.
-# Hotspots (pixels above the 90th percentile) will be displayed in one color (typically 1 = TRUE, usually white or black),
-# while other areas will be displayed in another color (0 = FALSE, typically transparent or grey).
+# Hotspots (pixels above the 90th percentile) will be displayed in one color (typically 1 = TRUE, Yellow),
+# while other areas will be displayed in another color (0 = FALSE, violet).
 
 ```
 
-#Using specific bands to calculate LST, NDVI, NDBI, and UHI
+## Using specific bands [4, 5, 6, and 10] to calculate LST, NDVI, NDBI, and UHRI
 
 ```{r}
 # Crop the raster stack using the Erie County boundary
@@ -215,12 +238,10 @@ ndbi <- (swir1 - nir) / (swir1 + nir)
 
 #Calculate Land Surface Temperature (LST)
 radiance <- tir * 0.0003342 + 0.1  
-# Convert the thermal infrared (TIR) band to radiance using the formula provided in the metadata of the Landsat data.
-# The constants (0.0003342 and 0.1) are specific to Landsat 8 and should be referenced from the metadata.
+# Convert the thermal infrared (TIR) band to radiance using the formula provided in the metadata of the Landsat data, constants (0.0003342 and 0.1) 
 
 kelvin_temp <- 1321.08 / log((774.89 / radiance) + 1)  
-# Convert the radiance to temperature in Kelvin using the formula for Landsat 8 TIRS band. 
-# The constants (1321.08 and 774.89) are specific to Landsat 8 and should be checked against the metadata.
+# Convert the radiance to temperature in Kelvin using the formula for Landsat 8 TIRS band. The constants from the metadata include (1321.08 and 774.89) 
 
 lst <- kelvin_temp - 273.15  
 # Convert the temperature from Kelvin to Celsius by subtracting 273.15. LST is commonly represented in Celsius.
@@ -228,12 +249,15 @@ lst <- kelvin_temp - 273.15
 #Calculate Urban Heat Risk Index (UHRI)
 uhri <- (lst + ndbi) - ndvi  
 # UHRI is a composite index that combines the Land Surface Temperature (LST), the Normalized Difference Built-up Index (NDBI), 
-# and the Normalized Difference Vegetation Index (NDVI). It is used to assess urban heat risk, where higher values indicate 
+# and the Normalized Difference Vegetation Index (NDVI). It is used to calculate urban heat risk, where higher values indicate 
 # areas with higher temperatures and less vegetation (urban heat islands).
 
 ```
 
-#Display plots of LST, NDVI, NDBI, and UHI
+
+
+
+## Using the calculated estimates of LST, NDVI, NDBI, and UHRI to visualize the spatial plots
 
 ```{r}
 # Set up the 2x2 plot layout
@@ -247,18 +271,16 @@ ndvi_palette <- colorRampPalette(c("red", "yellow", "green"))(100)
 # that the palette will consist of 100 discrete colors. Red represents low vegetation, green represents 
 # high vegetation.
 
-ndbi_palette <- colorRampPalette(c("white", "blue", "black"))(100)  
-# This creates a palette from white to black, with blue in the middle, for NDBI. Higher values of NDBI
+ndbi_palette <- colorRampPalette(c("brown", "yellow", "blue"))(100)  
+# This creates a palette from brwon to blue, with yellow in the middle, for NDBI. Higher values of NDBI
 # are typically associated with built-up areas, which are represented in blue/black, while lower values
 # are associated with natural areas, represented by white.
 
-lst_palette <- colorRampPalette(c("white", "blue", "red"))(100)  
-# This creates a palette from white to red with blue in the middle, for LST. White represents cooler 
-# temperatures, blue represents moderate temperatures, and red represents higher temperatures.
+lst_palette <- colorRampPalette(c("blue", "orange", "red"))(100)  
+# This creates a palette from blue to red with blue in the middle, for LST. blue represents cooler 
+# temperatures, yellow represents moderate temperatures, and red represents higher temperatures.
 
-uhri_palette <- colorRampPalette(c("white", "orange", "purple"))(100)  
-# This creates a palette from white to purple, with orange in the middle, for UHRI. The colors represent
-# varying levels of urban heat risk, where white might indicate lower heat risk and purple represents higher 
+uhri_palette <- colorRampPalette(c("royalblue", "orange", "red"))(100)  
 # risk areas (often associated with high temperatures, low vegetation, and urbanization).
 
 # Plot NDVI with bright colors
@@ -274,57 +296,17 @@ plot(ndbi, main = "NDBI", col = ndbi_palette, legend = TRUE)
 # Plot LST with bright colors
 plot(lst, main = "LST (°C)", col = lst_palette, legend = TRUE)  
 # This line plots the LST (Land Surface Temperature) index with the `lst_palette`. The LST values represent
-# the land surface temperature in degrees Celsius, with cooler areas shown in white, moderate areas in blue,
+# the land surface temperature in degrees Celsius, with cooler areas shown in blue, moderate areas in yellow,
 # and hotter areas in red.
 
 # Plot UHRI with bright colors
 plot(uhri, main = "UHRI", col = uhri_palette, legend = TRUE)  
 # This line plots the Urban Heat Risk Index (UHRI) with the `uhri_palette`. UHRI combines temperature, 
-# built-up areas, and vegetation, with higher values indicating higher heat risk (represented in purple).
+# built-up areas, and vegetation, with higher values indicating higher heat risk (represented in red).
 
 ```
 
-#Alternative colors
-
-```{r}
-# Set up color palettes for each index
-ndvi_palette <- colorRampPalette(c("#048C02", "#77DD77", "#B5E7A0", "#D6E9C6"))  
-# Palette for NDVI, from dark green (#048C02) to light green (#D6E9C6) to visualize vegetation density.
-
-ndbi_palette <- colorRampPalette(c("#F5F5F5", "#A9A9A9", "#696969", "#000000"))  
-# Palette for NDBI, from light gray (#F5F5F5) to dark gray/black (#000000) to represent urban areas.
-
-lst_palette <- colorRampPalette(c("#FFCCCB", "#FF7F50", "#FF4500", "#B22222"))  
-# Palette for LST, from light red (#FFCCCB) to dark red (#B22222) to represent temperatures, with hotter temperatures in darker red.
-
-uhri_palette <- colorRampPalette(c("#4575B4", "#91BFDB", "#FEE090", "#FC8D59", "#D73027"))  
-# Palette for UHRI, from blue (#4575B4) to red (#D73027), representing urban heat risk from low to high.
-
-# Plot results in a 2x2 grid
-par(mfrow = c(2, 2))  # Arrange plots in 2x2 grid layout
-
-# Plot NDVI
-plot(ndvi, col = ndvi_palette(100), main = "NDVI", axes = FALSE)  
-# NDVI plot using the NDVI color palette, `100` specifies the number of discrete colors.
-box()  # Adds a box around the plot for a cleaner presentation.
-
-# Plot NDBI
-plot(ndbi, col = ndbi_palette(100), main = "NDBI", axes = FALSE)  
-# NDBI plot with the NDBI color palette.
-box()  # Adds a box around the plot.
-
-# Plot LST (Land Surface Temperature)
-plot(lst, col = lst_palette(100), main = "LST (°C)", axes = FALSE)  
-# LST plot using the LST color palette, representing temperature values.
-box()  # Adds a box around the plot.
-
-# Plot UHRI (Urban Heat Risk Index)
-plot(uhri, col = uhri_palette(100), main = "UHRI", axes = FALSE)  
-# UHRI plot using the UHRI color palette, representing heat risk levels.
-box()  # Adds a box around the plot.
-
-
-```
+## Establish association between NDVI, NDBI, and LST
 
 ```{r}
 # Load the corrplot package for creating a correlation matrix plot
@@ -361,9 +343,10 @@ corr_plot <- corrplot(correlation_matrix,
 # Display the correlation plot
 corr_plot
 
+#the correlation coefficients maybe influenced by the lake Erie
 ```
 
-##Prepare census data for socio-demographic characteristics
+## Prepare census data for socio-demographic characteristics
 
 ```{r}
 # Set your Census API key
@@ -423,7 +406,7 @@ age_data <- get_decennial(geography = "block group", variables = age_vars, year 
 income_data <- get_acs(geography = "block group", variables = income_vars, year = 2020, state = "NY", county = "Erie", geometry = TRUE)
 ```
 
-#Join census data and shapefiles
+## Join census data and shapefiles
 
 ```{r}
 
@@ -440,22 +423,25 @@ if (st_crs(erie_county) != st_crs(age_data)) {
 age_merged <- st_join(erie_county, age_data, join = st_intersects)
 ```
 
+
+
+## Analysis (overlay age on NDVI, NDBI, LST, and UHRI) for intersectionality (obj3)
 ```{r}
 # Define a color palette for the age data (assuming 'age_merged' has a numeric age variable)
 age_palette <- colorRampPalette(c("lightblue", "blue", "darkblue"))(100)
 
 # Define color palettes
 ndvi_palette <- colorRampPalette(c("red", "yellow", "green"))(100)
-ndbi_palette <- colorRampPalette(c("white", "blue", "black"))(100)
-lst_palette <- colorRampPalette(c("white", "blue", "red"))(100)
-uhri_palette <- colorRampPalette(c("white", "orange", "purple"))(100)
+ndbi_palette <- colorRampPalette(c("brown", "yellow", "blue"))(100)
+lst_palette <- colorRampPalette(c("blue", "orange", "red"))(100)
+uhri_palette <- colorRampPalette(c("royalblue", "orange", "red"))(100)
 
 # Ensure the CRS of `age_merged` and raster layers match (if not, transform `age_merged`)
 # Check CRS of age_merged
 st_crs(age_merged)  # This should match the CRS of your rasters
 
 # If CRS is different, transform age_merged to match the raster CRS
-age_merged <- st_transform(age_merged, crs = crs(ndvi))  # Replace `ndvi` with your raster object if needed
+age_merged <- st_transform(age_merged, crs = crs(ndvi))  # Replace `ndvi` with your raster object
 
 # Set up a 2x2 plot layout
 par(mfrow = c(2, 2))
@@ -472,45 +458,73 @@ plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Ov
 plot(lst, main = "LST (°C)", col = lst_palette, legend = TRUE)
 plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Overlay age_merged polygons
 
-# Plot UHRI with bright colors
-# Assuming 'uhri' is a RasterLayer object (from the raster package)
-library(raster)
-
-# Define the color palette for UHRI (adjust the palette if needed)
-uhri_palette <- colorRampPalette(c("white", "orange", "purple"))(100)
-
-
 ```
 
-# Results
+## 3.0 Results
 
+The results show
 The results showed that UHI was unequally distributed across Erie County.
 
-Also, high heat risk were concentrated in the urban core.For the second question—How is the spatial pattern of urban heat risk linked to the socio-economic characteristics of residents?
+Also, high heat risk were concentrated in the urban core. For the second question—How is the spatial pattern of urban heat risk linked to the socio-economic characteristics of residents?
+
 
 ```{r}
-# Assuming 'ndvi_cropped_resampled' exists and is correctly created
-# Convert the raster to a format that can be used with leaflet
-ndvi_cropped_resampled_pal <- colorNumeric(palette = "YlGnBu", domain = values(ndvi_cropped_resampled))
+# Install and load required packages if not already done
+install.packages("raster")
+library(raster)
 
-# Create the interactive leaflet map
-leaflet() %>%
-  addTiles() %>%  # Add OpenStreetMap base layer
-  addRasterImage(ndvi_cropped_resampled, 
-                 colors = ndvi_cropped_resampled_pal, 
-                 opacity = 0.7, 
-                 group = "NDVI") %>%  # Add the downsampled NDVI layer
-  addLegend(pal = ndvi_cropped_resampled_pal, 
-            values = values(ndvi_cropped_resampled), 
-            title = "NDVI", 
-            opacity = 1) %>%  # Add a color legend
+# Define a function to downsample the raster
+downsample_raster <- function(raster_data, factor = 2) {
+  # Use the aggregate function to downsample the raster by the factor
+  # The "fact" parameter reduces the resolution by the specified factor
+  resampled_raster <- aggregate(raster_data, fact = factor, fun = mean)
+  return(resampled_raster)
+}
+
+# Example downsampling of your raster layers (adjust factor as necessary)
+ndvi_resampled <- downsample_raster(ndvi, factor = 4)  # Downsampling by a factor of 4
+ndbi_resampled <- downsample_raster(ndbi, factor = 4)
+lst_resampled <- downsample_raster(lst, factor = 4)
+uhri_resampled <- downsample_raster(uhri, factor = 4)
+
+
+# Check size of the resampled raster
+object.size(ndvi_resampled)
+object.size(ndbi_resampled)
+object.size(lst_resampled)
+object.size(uhri_resampled)
+
+
+# Create the Leaflet map with downsampled rasters
+map <- leaflet() %>%
+  addTiles()  # Add OpenStreetMap basemap
+
+# Add each resampled raster to the map
+map <- map %>%
+  addRasterImage(ndvi_resampled, colors = ndvi_palette, opacity = 0.6, group = "NDVI") %>%
+  addRasterImage(ndbi_resampled, colors = ndbi_palette, opacity = 0.6, group = "NDBI") %>%
+  addRasterImage(lst_resampled, colors = lst_palette, opacity = 0.6, group = "LST") %>%
+  addRasterImage(uhri_resampled, colors = uhri_palette, opacity = 0.6, group = "UHRI")
+
+# Add the polygons (age_merged) with a color based on age data
+map <- map %>%
+  addPolygons(data = age_merged, color = ~age_palette[age_merged$age], 
+              weight = 1, fillOpacity = 0.5, group = "Age Polygons") 
+
+# Add Layers Control to toggle visibility of layers
+map <- map %>%
   addLayersControl(
-    overlayGroups = c("NDVI"), 
-    options = layersControlOptions(collapsed = FALSE)  # Add layer control
-  ) %>%
-  setView(lng = -80.12, lat = 42.12, zoom = 8)  # Set initial map view (centered around Erie County)
+    overlayGroups = c("NDVI", "NDBI", "LST", "UHRI", "Age Polygons"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+# Display the map
+map
+
 
 ```
+
+
 
 ```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
 # Load necessary libraries
@@ -568,12 +582,27 @@ lst_map
 uhri
 ```
 
-# Conclusions
+## 4.0 Conclusions
 I examined the spatial pattern of LST in Erie county. I used a Landsat 8 data to estimate land surface temperatures and urban form composition indices for built-up (NDBI) and vegetation (NDVI), obtaining the urban heat risk index. The results showed that the region was experiencing UHIs, which were unequally distributed across the study area.
 
 Future works
 To examine the spatial relationships between urban heat risk and vulnerable social groups (race, age, income).
 
+
+
 # References
 
-All sources are cited in a consistent manner
+Mitchell, B. C., & Chakraborty, J. (2014). Urban heat and climate justice: a landscape of thermal inequity in Pinellas County, Florida. Geographical Review, 104(4), 459-480. <https://doi.org/10.1111/j.1931-0846.2014.12039.x>
+
+United Nations Department of Economic and Social Affairs (UNDESA) (2018). World Urbanization Prospects—Population Division: The 2018 Revision.
+
+Li, X., Zhou, Y., Yu, S., Jia, G., Li, H., & Li, W. (2019). Urban heat island impacts on building energy consumption: A review of approaches and findings. Energy, 174, 407-419. <https://doi.org/10.1016/j.energy.2019.02.183>
+
+Wilby, R. L. (2008). Constructing climate change scenarios of urban heat island intensity and air quality. Environment and Planning B: Planning and Design, 35(5), 902-919. <https://doi.org/10.1068/b33066t>
+
+Jung, M. W., Haddad, M. A., & Gelder, B. K. (2024). Examining heat inequity in a Brazilian metropolitan region. Environment and Planning B: Urban Analytics and City Science, 51(1), 109-127. <https://doi.org/10.1177/23998083231170634>
+
+Chen, P. (2024). Inequality in heat: The role of spatial patterns of urban green infrastructure. Urban Climate, 53, 101820. <https://doi.org/10.1016/j.uclim.2024.101820>
+
+Heck, S. (2021). Greening the color line: Historicizing water infrastructure redevelopment and environmental justice in the St. Louis metropolitan region. Journal of Environmental Policy & Planning, 23(5), 565-580. <https://doi.org/10.1080/1523908X.2021.1888702> 
+
