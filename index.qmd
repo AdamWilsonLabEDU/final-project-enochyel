@@ -1,10 +1,12 @@
 ---
 title: "Intersectional climate justice perspective: The case of extreme heat in Erie County, NY"
 author: "Enoch Yeleliere"
-output:
-       github_document
-       html_document
+output: 
+  github_document: default
+  html_document: default
+  pdf_document: default
 date: 12/13/2024
+code_folding: hide
 ---
 
 # 1.0 Introduction
@@ -26,7 +28,7 @@ iii). How do socio-demographic, economic, and spatial factors intersect to shape
 To address the three research questions, I used remote sensing and exploratory spatial data science techniques. First, I obtained satellite imagery from Landsat 8 Collection 2, Level 1, taken in November 2024, from the United States Geological Survey (USGS) via the EarthExplorer platform (<https://earthexplorer.usgs.gov/>). The choice of Landsat data was driven by its higher resolution compared to other available datasets, making it more suitable for this type of analysis. This satellite data was used to estimate key indices such as Land Surface Temperature (LST), Normalized Difference Vegetation Index (NDVI), Normalized Difference Built-up Index (NDBI), and the Urban Heat Risk Index (UHRI) in Erie County.
 
 The UHRI is mathematically expressed as:
-UHRI = (LST + NDBI)-NDVI (Mitchell and Chakraborty, 2015). 
+UHRI = (LST + NDBI)-NDVI           (Mitchell and Chakraborty, 2015). 
 
 In this equation, the NDBI represents the built environment features of urban areas, ranging from non-urbanized forms (-1) to highly urbanized forms (+1). The NDVI, which reflects vegetative cover in urban areas, ranges from minimal vegetation (-1) to abundant vegetation (+1). I calculated the mean values of LST, NDVI, and NDBI, which were then used to create spatial maps for analysis.
 
@@ -40,7 +42,7 @@ Conduct analysis
 
 To answer the study objectives, the following procedure was followed and executed:
 
-## 1. Load packages that are need to conduct this analysis (NB. All the packages are already installed from prior works):
+## Load packages that are need to conduct this analysis (NB. All the packages are already installed from prior works):
 
 ```{r, message=F, warning=F}
 # Load necessary libraries
@@ -58,7 +60,7 @@ library(raster)      # For raster data manipulation
 
 
 
-## 2. Download, clean, and process data (Landsat 8 collective 2 level 1)
+## Download, clean, and process data (Landsat 8 collective 2 level 1)
 
 ```{r}
 # Key Steps
@@ -121,7 +123,7 @@ erie_boundary_vect <- vect(erie_county)  # Convert sf object to SpatVector for r
 raster_cropped <- crop(raster_stack, erie_boundary_vect)  # Crop the raster stack to the Erie County boundary
 ```
 
-## 3. Visualize data and display plots
+## Visualize data and display plots
 
 ```{r}
 #Plot the cropped raster (first 12 bands)
@@ -186,7 +188,7 @@ plot(mean_temperature, col = temperature_palette,
 
 ```
 
-## 4. Analysis (establishing patterns from the data-hotspot analysis using the mean_temperature)
+## Analysis (establishing patterns from the data-hotspot analysis using the mean_temperature)
 
 ```{r}
 # Perform hotspot analysis based on the 90th percentile of temperature values
@@ -350,7 +352,7 @@ corr_plot
 
 ```{r}
 # Set your Census API key
-census_api_key("677c6e6ec5f3c8621d7b139013d29cb61cf4dcdd")
+census_api_key("677c6e6ec5f3c8621d7b139013d29cb61cf4dcdd", install = TRUE, overwrite = TRUE)
 
 # Define the variables for race, age, and income
 race_vars <- c(
@@ -460,7 +462,7 @@ plot(age_merged$geometry, add = TRUE, col = age_palette, border = "white")  # Ov
 
 ```
 
-## 3.0 Results
+# 3.0 Results
 
 The results from the plots reveal contrasting patterns between vegetation and urbanization. Vegetation areas are represented by NDVI values ranging from -1 to 1, with low vegetation in red, moderate vegetation in yellow, and high vegetation in green. In contrast, urbanized areas are represented by NDBI values, which range from brown (low urbanization) to blue (high urbanization). The results empirically illustrate that areas with low to moderate vegetation and high levels of urbanization (as indicated by higher NDBI values) are most likely hotspots for the urban heat effect (UHE). This is due to the dense population and limited vegetation in these areas, which leads to higher land surface temperatures.
 
@@ -472,9 +474,6 @@ Additionally, overlaying socio-demographic data (specifically age) with the envi
 
 
 ```{r, fig.width=6, fig.height=3, fig.cap="Map of completely random data"}
-# Install and load required packages if not already done
-install.packages("raster")
-library(raster)
 
 # Define a function to downsample the raster
 downsample_raster <- function(raster_data, factor = 2) {
@@ -528,7 +527,7 @@ map
 ```
 
 
-## 4.0 Conclusions
+# 4.0 Conclusions
 
 The study provides an understanding of the spatial patterns of urban heat risk and the intersectional vulnerabilities of different communities in Erie County. The study used Landsat 8 Collection 2 level 1 remote sensing data coupled with spatial data analysis to establish patterns using environmental indies (NDBI, NDVI, LST, and UHRI). These findings shows:
 Areas with high urbanization and low vegetation (high NDBI and low NDVI) are at the highest risk of extreme heat.
@@ -540,7 +539,7 @@ Future Research:
 Future work should explore the spatial relationships between urban heat risk and vulnerable social groups (e.g., race, age, income) across different temporal scales, such as through time series analysis.
 
 
-# References
+# 5.0 References
 
 Mitchell, B. C., & Chakraborty, J. (2014). Urban heat and climate justice: a landscape of thermal inequity in Pinellas County, Florida. Geographical Review, 104(4), 459-480. <https://doi.org/10.1111/j.1931-0846.2014.12039.x>
 
